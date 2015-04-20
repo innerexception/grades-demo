@@ -1,0 +1,33 @@
+<h2>Grades</h2>
+
+<input on-enter="onBlur" class="newGradeInput" placeholder="Enter a new name">
+<input on-enter="onBlur" class="newGradeInput" placeholder="Enter a new grade">
+<button on-click="newGrade">Save</button>
+
+<ul class="gradesList">
+    {{#grades:i}}
+        {{>gradeItem}}
+    {{/grades}}
+</ul>
+
+<!-- {{>gradeItem}} -->
+<li class='{{ failing ? "failing" : "" }}'>
+    <div on-dbl-click="modifyName">
+        {{#!editing}}
+            {{name}}
+        {{/!editing}}
+        {{#editing}}
+            <input class="nameEditor" value="{{name}}" on-blur="editCompleted">
+        {{/editing}}
+    </div>
+    <div on-dbl-click="modifyGrade">
+        {{#!editing}}
+            {{grade}}
+        {{/!editing}}
+        {{#editing}}
+            <input class="gradeEditor" value="{{grade}}" on-blur="editCompleted">
+        {{/editing}}
+    </div>
+    <a class="removeButton" on-click="deleteGrade">X</a>
+</li>
+<!-- {{/gradeItem}} -->
