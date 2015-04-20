@@ -9,10 +9,15 @@ define(['ractive', 'rv!/grades/src/gradeApp/gradeAppTemplate.html', 'css!/grades
                 template: gradeAppTemplate,
                 data: {
                     grades: [
-                        {name: 'Billy', grade:65, failing:true, editing:false},
+                        {name: 'Billy', grade:64, failing:true, editing:false},
                         {name: 'Timmy', grade:75, failing:false, editing:false},
                         {name: 'Sally', grade:95, failing:false, editing:false}
-                    ]
+                    ],
+                    statistics: {
+                        averageGrade: 0,
+                        minimumGrade: 0,
+                        maximumGrade: 0
+                    }
                 }
             });
             //Ractive proxy events from template
@@ -23,9 +28,16 @@ define(['ractive', 'rv!/grades/src/gradeApp/gradeAppTemplate.html', 'css!/grades
                 newGrade: function(event){
                     var gradeInput = event.node.previousElementSibling;
                     var nameInput = gradeInput.previousElementSibling;
-                    self.addGrade(nameInput.value, gradeInput.value);
-                    event.node.name = '';
-                    event.node.grade = '';
+
+                    if(!isNaN(parseInt(gradeInput.value))){
+                        self.addGrade(nameInput.value, gradeInput.value);
+                    }
+                    else{
+                        alert('Grades must be numeric!');
+                    }
+
+                    gradeInput.value = '';
+                    nameInput.value = '';
                 },
                 modifyGrade: function(event){
                     self.editGrade(event.index.i, '.grade');
@@ -40,6 +52,11 @@ define(['ractive', 'rv!/grades/src/gradeApp/gradeAppTemplate.html', 'css!/grades
                     event.node.blur();
                 }
             });
+            this._ractive.observe('grades', function(grades){
+                self.setStats(grades);
+                self.setFailing(grades);
+                self.validateGrades(grades);
+            });
         };
 
         gradeApp.prototype = {
@@ -48,7 +65,7 @@ define(['ractive', 'rv!/grades/src/gradeApp/gradeAppTemplate.html', 'css!/grades
                     name: name,
                     grade: grade,
                     editing: false,
-                    failing: grade <= 65
+                    failing: grade < 65
                 });
             },
             removeGrade: function(index){
@@ -77,11 +94,6 @@ define(['ractive', 'rv!/grades/src/gradeApp/gradeAppTemplate.html', 'css!/grades
                             self._ractive.set('grades.' + index + fieldName, currentValue);
                             input.blur();
                             break;
-                        case 9:    //Tab
-                            event.preventDefault();
-                            input.blur();
-                            self.editGrade((index + 1) % self._ractive.get('grades').length, fieldName);
-                            break;
                     }
                 });
 
@@ -92,6 +104,41 @@ define(['ractive', 'rv!/grades/src/gradeApp/gradeAppTemplate.html', 'css!/grades
                     });
 
                 this._ractive.set('grades.' + index + '.editing', true);
+            },
+            setStats: function(grades){
+                if(grades.length > 0){
+                    var total = 0;
+                    var min = 100;
+                    var max = 0;
+                    for(var i=0; i<grades.length; i++){
+                        var currentGrade = parseInt(grades[i].grade);
+                        total += currentGrade;
+                        min > currentGrade ? min = currentGrade : min;
+                        max < currentGrade ? max = currentGrade : max;
+                    }
+                    this._ractive.animate('statistics.averageGrade', total / i);
+                    this._ractive.animate('statistics.maximumGrade', max);
+                    this._ractive.animate('statistics.minimumGrade', min);
+                }
+                else{
+                    this._ractive.animate('statistics.averageGrade', 0);
+                    this._ractive.animate('statistics.maximumGrade', 0);
+                    this._ractive.animate('statistics.minimumGrade', 0);
+                }
+            },
+            setFailing: function(grades){
+                for(var i=0; i<grades.length; i++){
+                    var currentGrade = parseInt(grades[i].grade);
+                    this._ractive.set('grades.'+i+'.failing', !(currentGrade >= 65));
+                }
+            },
+            validateGrades: function(grades){
+                for(var i=0; i<grades.length; i++){
+                    if(isNaN(parseInt(grades[i].grade))){
+                        this._ractive.set('grades.'+i+'.grade', -1);
+                        alert('Grades must be numeric!');
+                    }
+                }
             }
         };
 
